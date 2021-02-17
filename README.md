@@ -1,0 +1,1 @@
+# BAD-Token-ERC20
