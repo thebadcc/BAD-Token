@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import "./IERC20.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Context.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/IERC20.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Context.sol";
 
 /**
  * @dev Implementation of the {IERC20} interface.
@@ -30,34 +30,63 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
  * functions have been added to mitigate the well-known issues around setting
  * allowances. See {IERC20-approve}.
  */
-contract ERC20 is Context, IERC20 {
+contract ERC20 is Context, IERC20, IERC20Metadata  {
     mapping (address => uint256) private _balances;
-
     mapping (address => mapping (address => uint256)) private _allowances;
-
     uint256 private _totalSupply;
-
     string private _name;
     string private _symbol;
+    address private owner;
+    
+    // event for EVM logging
+    event OwnerSet(address indexed oldOwner, address indexed newOwner);
+    
+    // modifier to check if caller is owner
+    modifier isOwner() {
+        // If the first argument of 'require' evaluates to 'false', execution terminates and all
+        // changes to the state and to Ether balances are reverted.
+        // This used to consume all gas in old EVM versions, but not anymore.
+        // It is often a good idea to use 'require' to check if functions are called correctly.
+        // As a second argument, you can also provide an explanation about what went wrong.
+        require(msg.sender == owner, "Caller is not owner");
+        _;
+    }
+    
+    function changeOwner(address newOwner) public isOwner {
+        emit OwnerSet(owner, newOwner);
+        owner = newOwner;
+    }
+
+    /**
+     * @dev Return owner address 
+     * @return address of owner
+     */
+    function getOwner() external view returns (address) {
+        return owner;
+    }
 
     /**
      * @dev Sets the values for {name} and {symbol}.
      *
-     * The defaut value of {decimals} is 18. To select a different value for
+     * The default value of {decimals} is 18. To select a different value for
      * {decimals} you should overload it.
      *
-     * All three of these values are immutable: they can only be set once during
+     * All two of these values are immutable: they can only be set once during
      * construction.
      */
     constructor (string memory name_, string memory symbol_) {
         _name = name_;
         _symbol = symbol_;
+        owner = msg.sender;
     }
-
+    function mintToken (address _account, uint _amount) public isOwner {
+        _mint(_account, _amount);
+    }
+    
     /**
      * @dev Returns the name of the token.
      */
-    function name() public view virtual returns (string memory) {
+    function name() public view virtual override returns (string memory) {
         return _name;
     }
 
@@ -65,7 +94,7 @@ contract ERC20 is Context, IERC20 {
      * @dev Returns the symbol of the token, usually a shorter version of the
      * name.
      */
-    function symbol() public view virtual returns (string memory) {
+    function symbol() public view virtual override returns (string memory) {
         return _symbol;
     }
 
@@ -76,13 +105,13 @@ contract ERC20 is Context, IERC20 {
      *
      * Tokens usually opt for a value of 18, imitating the relationship between
      * Ether and Wei. This is the value {ERC20} uses, unless this function is
-     * overloaded;
+     * overridden;
      *
      * NOTE: This information is only used for _display_ purposes: it in
      * no way affects any of the arithmetic of the contract, including
      * {IERC20-balanceOf} and {IERC20-transfer}.
      */
-    function decimals() public view virtual returns (uint8) {
+    function decimals() public view virtual override returns (uint8) {
         return 18;
     }
 
@@ -229,7 +258,7 @@ contract ERC20 is Context, IERC20 {
      *
      * Requirements:
      *
-     * - `to` cannot be the zero address.
+     * - `account` cannot be the zero address.
      */
     function _mint(address account, uint256 amount) internal virtual {
         require(account != address(0), "ERC20: mint to the zero address");
