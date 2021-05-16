@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/IERC20.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Context.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/security/Pausable.sol";
 
 /**
  * @dev Implementation of the {IERC20} interface.
@@ -30,7 +31,10 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
  * functions have been added to mitigate the well-known issues around setting
  * allowances. See {IERC20-approve}.
  */
-contract ERC20 is Context, IERC20, IERC20Metadata  {
+ 
+ 
+
+contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
     mapping (address => uint256) private _balances;
     mapping (address => mapping (address => uint256)) private _allowances;
     uint256 private _totalSupply;
@@ -51,6 +55,8 @@ contract ERC20 is Context, IERC20, IERC20Metadata  {
         require(msg.sender == owner, "Caller is not owner");
         _;
     }
+    
+    
     
     function changeOwner(address newOwner) public isOwner {
         emit OwnerSet(owner, newOwner);
@@ -79,8 +85,21 @@ contract ERC20 is Context, IERC20, IERC20Metadata  {
         _symbol = symbol_;
         owner = msg.sender;
     }
-    function mintToken (address _account, uint _amount) public isOwner {
-        _mint(_account, _amount);
+    function mintToken (address account, uint amount) public isOwner {
+        _mint(account, amount);
+    }
+    
+    function burnToken (address account, uint256 amount) public isOwner {
+        _burn(account, amount);
+    }
+    
+    
+    function pause() public isOwner {
+        _pause();
+    }
+    
+    function unpause() public isOwner {
+        _unpause();
     }
     
     /**
@@ -137,7 +156,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata  {
      * - `recipient` cannot be the zero address.
      * - the caller must have a balance of at least `amount`.
      */
-    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
+    function transfer(address recipient, uint256 amount) whenNotPaused public virtual override returns (bool) {
         _transfer(_msgSender(), recipient, amount);
         return true;
     }
@@ -174,7 +193,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata  {
      * - the caller must have allowance for ``sender``'s tokens of at least
      * `amount`.
      */
-    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
+    function transferFrom(address sender, address recipient, uint256 amount) whenNotPaused public virtual override returns (bool) {
         _transfer(sender, recipient, amount);
 
         uint256 currentAllowance = _allowances[sender][_msgSender()];
