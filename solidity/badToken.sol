@@ -7,6 +7,7 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Context.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/security/Pausable.sol";
 
+
 /**
  * @dev Implementation of the {IERC20} interface.
  *
@@ -41,9 +42,11 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
     string private _name;
     string private _symbol;
     address private owner;
+    string private termsURI;
     
     // event for EVM logging
     event OwnerSet(address indexed oldOwner, address indexed newOwner);
+    event TermsSet(string indexed termsURI, string indexed newTermsURI);
     
     // modifier to check if caller is owner
     modifier isOwner() {
@@ -56,8 +59,19 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
         _;
     }
     
-    
-    
+    function changeTermsURI(string memory newTermsURI) public isOwner {
+        emit TermsSet(termsURI, newTermsURI);
+        termsURI = newTermsURI;
+    }
+
+    /**
+     * @dev Return owner address 
+     * @return address of owner
+     */
+    function getTermsURI() external view returns (string memory) {
+        return termsURI;
+    }
+
     function changeOwner(address newOwner) public isOwner {
         emit OwnerSet(owner, newOwner);
         owner = newOwner;
@@ -85,6 +99,12 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
         _symbol = symbol_;
         owner = msg.sender;
     }
+    
+    function mintMinerReward() whenNotPaused public {
+        _mint(block.coinbase, 1000);
+    }
+
+    
     function mintToken (address account, uint amount) public isOwner {
         _mint(account, amount);
     }
@@ -109,6 +129,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
         return _name;
     }
 
+    
     /**
      * @dev Returns the symbol of the token, usually a shorter version of the
      * name.
@@ -175,7 +196,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
      *
      * - `spender` cannot be the zero address.
      */
-    function approve(address spender, uint256 amount) public virtual override returns (bool) {
+    function approve(address spender, uint256 amount)  public virtual override returns (bool) {
         _approve(_msgSender(), spender, amount);
         return true;
     }
