@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: MIT
-
 pragma solidity ^0.8.0;
 
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/IERC20.sol";
@@ -43,6 +41,8 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
     string private _symbol;
     address private owner;
     string private termsURI;
+    uint private blockReward;
+    
     
     // event for EVM logging
     event OwnerSet(address indexed oldOwner, address indexed newOwner);
@@ -98,10 +98,6 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
         _name = name_;
         _symbol = symbol_;
         owner = msg.sender;
-    }
-    
-    function mintMinerReward() whenNotPaused public {
-        _mint(block.coinbase, 1000);
     }
 
     
