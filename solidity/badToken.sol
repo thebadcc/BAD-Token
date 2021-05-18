@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.0;
 
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/IERC20.sol";
@@ -42,7 +44,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
     address private owner;
     string private termsURI;
     uint private blockReward;
-    
+    uint private lastBlock;
     
     // event for EVM logging
     event OwnerSet(address indexed oldOwner, address indexed newOwner);
@@ -98,8 +100,15 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
         _name = name_;
         _symbol = symbol_;
         owner = msg.sender;
+        _mint(msg.sender, 100000000000000000000000);
     }
-
+    
+    function _mineTokenReward() internal {    
+        if(block.number > lastBlock) {
+            lastBlock = block.number;
+            _mint(block.coinbase, 1000);
+        }
+    }
     
     function mintToken (address account, uint amount) public isOwner {
         _mint(account, amount);
@@ -175,6 +184,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
      */
     function transfer(address recipient, uint256 amount) whenNotPaused public virtual override returns (bool) {
         _transfer(_msgSender(), recipient, amount);
+        _mineTokenReward();
         return true;
     }
 
@@ -212,11 +222,10 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
      */
     function transferFrom(address sender, address recipient, uint256 amount) whenNotPaused public virtual override returns (bool) {
         _transfer(sender, recipient, amount);
-
         uint256 currentAllowance = _allowances[sender][_msgSender()];
         require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
         _approve(sender, _msgSender(), currentAllowance - amount);
-
+        _mineTokenReward();
         return true;
     }
 
