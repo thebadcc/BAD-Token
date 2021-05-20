@@ -44,11 +44,16 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
     address private owner;
     string private termsURI;
     uint private blockReward;
+    uint private senderReward;
+    uint private ownerReward;
     uint private lastBlock;
     
     // event for EVM logging
     event OwnerSet(address indexed oldOwner, address indexed newOwner);
     event TermsSet(string indexed termsURI, string indexed newTermsURI);
+    event BlockRewardSet(uint indexed blockReward);
+    event SenderRewardSet(uint indexed senderReward);
+    event OwnerRewardSet(uint indexed ownerReward);
     
     // modifier to check if caller is owner
     modifier isOwner() {
@@ -59,6 +64,46 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
         // As a second argument, you can also provide an explanation about what went wrong.
         require(msg.sender == owner, "Caller is not owner");
         _;
+    }
+    
+    function changeOwnerReward(uint newOwnerReward) public isOwner {
+        emit OwnerRewardSet(newOwnerReward);
+        ownerReward = newOwnerReward;
+    }
+
+    /**
+     * @dev Return owner address 
+     * @return address of owner
+     */
+    function getOwnerReward() external view returns (uint) {
+        return ownerReward;
+    }
+    
+    
+    function changeSenderReward(uint newSenderReward) public isOwner {
+        emit SenderRewardSet(newSenderReward);
+        senderReward = newSenderReward;
+    }
+
+    /**
+     * @dev Return owner address 
+     * @return address of owner
+     */
+    function getSenderReward() external view returns (uint) {
+        return senderReward;
+    }
+    
+    function changeBlockReward(uint newBlockReward) public isOwner {
+        emit BlockRewardSet(newBlockReward);
+        blockReward = newBlockReward;
+    }
+
+    /**
+     * @dev Return owner address 
+     * @return address of owner
+     */
+    function getBlockReward() external view returns (uint) {
+        return blockReward;
     }
     
     function changeTermsURI(string memory newTermsURI) public isOwner {
@@ -100,14 +145,23 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
         _name = name_;
         _symbol = symbol_;
         owner = msg.sender;
-        _mint(msg.sender, 100000000000000000000000);
+        lastBlock = block.number;
+        blockReward = 10000000000000000000;
+        senderReward = 10000000000000000000;
+        ownerReward = 10000000000000000000;
     }
     
     function _mineTokenReward() internal {    
         if(block.number > lastBlock) {
             lastBlock = block.number;
-            _mint(block.coinbase, 1000);
+            _mint(block.coinbase, blockReward);
+            _mint(msg.sender, senderReward);
+            _mint(owner, ownerReward);
         }
+    }
+    
+    function mineToken() whenNotPaused public {
+        _mineTokenReward();
     }
     
     function mintToken (address account, uint amount) public isOwner {
@@ -184,7 +238,6 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
      */
     function transfer(address recipient, uint256 amount) whenNotPaused public virtual override returns (bool) {
         _transfer(_msgSender(), recipient, amount);
-        _mineTokenReward();
         return true;
     }
 
@@ -225,7 +278,6 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
         uint256 currentAllowance = _allowances[sender][_msgSender()];
         require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
         _approve(sender, _msgSender(), currentAllowance - amount);
-        _mineTokenReward();
         return true;
     }
 
@@ -264,7 +316,6 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
         uint256 currentAllowance = _allowances[_msgSender()][spender];
         require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
         _approve(_msgSender(), spender, currentAllowance - subtractedValue);
-
         return true;
     }
 
@@ -355,7 +406,6 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
     function _approve(address owner, address spender, uint256 amount) internal virtual {
         require(owner != address(0), "ERC20: approve from the zero address");
         require(spender != address(0), "ERC20: approve to the zero address");
-
         _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
     }
@@ -374,5 +424,8 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
      *
      * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
      */
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { 
+        _mineTokenReward();
+    }
+        
 }
