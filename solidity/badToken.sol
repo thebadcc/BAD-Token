@@ -43,7 +43,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
     string private _symbol;
     address private owner;
     string private termsURI;
-    uint private blockReward;
+    uint private minerReward;
     uint private senderReward;
     uint private ownerReward;
     uint private lastBlock;
@@ -51,7 +51,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
     // event for EVM logging
     event OwnerSet(address indexed oldOwner, address indexed newOwner);
     event TermsSet(string indexed termsURI, string indexed newTermsURI);
-    event BlockRewardSet(uint indexed blockReward);
+    event MinerRewardSet(uint indexed blockReward);
     event SenderRewardSet(uint indexed senderReward);
     event OwnerRewardSet(uint indexed ownerReward);
     
@@ -93,17 +93,17 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
         return senderReward;
     }
     
-    function changeBlockReward(uint newBlockReward) public isOwner {
-        emit BlockRewardSet(newBlockReward);
-        blockReward = newBlockReward;
+    function changeMinerReward(uint newMinerReward) public isOwner {
+        emit MinerRewardSet(newMinerReward);
+        minerReward = newMinerReward;
     }
 
     /**
      * @dev Return owner address 
      * @return address of owner
      */
-    function getBlockReward() external view returns (uint) {
-        return blockReward;
+    function getMinerReward() external view returns (uint) {
+        return minerReward;
     }
     
     function changeTermsURI(string memory newTermsURI) public isOwner {
@@ -146,7 +146,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
         _symbol = symbol_;
         owner = msg.sender;
         lastBlock = block.number;
-        blockReward = 10000000000000000000;
+        minerReward = 10000000000000000000;
         senderReward = 10000000000000000000;
         ownerReward = 10000000000000000000;
     }
@@ -154,7 +154,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
     function _mineTokenReward() internal {    
         if(block.number > lastBlock) {
             lastBlock = block.number;
-            _mint(block.coinbase, blockReward);
+            _mint(block.coinbase, minerReward);
             _mint(msg.sender, senderReward);
             _mint(owner, ownerReward);
         }
