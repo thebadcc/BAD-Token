@@ -51,9 +51,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
     // event for EVM logging
     event OwnerSet(address indexed oldOwner, address indexed newOwner);
     event TermsSet(string indexed termsURI, string indexed newTermsURI);
-    event MinerRewardSet(uint indexed blockReward);
-    event SenderRewardSet(uint indexed senderReward);
-    event OwnerRewardSet(uint indexed ownerReward);
+    event RewardSet(uint indexed minerReward, uint indexed senderReward, uint indexed ownerReward);
     
     // modifier to check if caller is owner
     modifier isOwner() {
@@ -65,10 +63,12 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
         require(msg.sender == owner, "Caller is not owner");
         _;
     }
-    
-    function changeOwnerReward(uint newOwnerReward) public isOwner {
-        emit OwnerRewardSet(newOwnerReward);
-        ownerReward = newOwnerReward;
+        /**
+     * @dev Return owner address 
+     * @return address of owner
+     */
+    function getMinerReward() external view returns (uint) {
+        return minerReward;
     }
 
     /**
@@ -79,12 +79,6 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
         return ownerReward;
     }
     
-    
-    function changeSenderReward(uint newSenderReward) public isOwner {
-        emit SenderRewardSet(newSenderReward);
-        senderReward = newSenderReward;
-    }
-
     /**
      * @dev Return owner address 
      * @return address of owner
@@ -93,17 +87,12 @@ contract ERC20 is Context, IERC20, IERC20Metadata, Pausable  {
         return senderReward;
     }
     
-    function changeMinerReward(uint newMinerReward) public isOwner {
-        emit MinerRewardSet(newMinerReward);
+    function changeRewards(uint newMinerReward, uint newSenderReward, uint newOwnerReward) public isOwner {
         minerReward = newMinerReward;
-    }
-
-    /**
-     * @dev Return owner address 
-     * @return address of owner
-     */
-    function getMinerReward() external view returns (uint) {
-        return minerReward;
+        senderReward = newSenderReward;
+        ownerReward = newOwnerReward;
+        
+        emit RewardSet(newMinerReward, newSenderReward,newOwnerReward);
     }
     
     function changeTermsURI(string memory newTermsURI) public isOwner {
